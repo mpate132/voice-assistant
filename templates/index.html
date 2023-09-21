@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    />
+    <title>Voice-Assistant</title>
+    <style>
+      .container {
+        min-height: 30vh;
+        background-color: #f5f7f6;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        margin: 50px auto;
+        border-radius: 8px;
+      }
+
+      .chats {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      hr {
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">ChatGPT-VA</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent"
+          aria-controls="navbarSupportedContent"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="#">Home</a>
+            </li>
+          </ul>
+          <form class="d-flex" role="search">
+            <input
+              class="form-control me-2"
+              type="search"
+              placeholder="Search"
+              aria-label="Search"
+            />
+            <button class="btn btn-outline-success" type="submit">
+              Search
+            </button>
+          </form>
+        </div>
+      </div>
+    </nav>
+    <div class="container py-4">
+      <div><h1>Welcome to Voice GPT</h1></div>
+      <div>
+        <button id="start" class="btn btn-success mx-2 px-4">Start</button>
+        <button id="stoper" class="btn btn-danger mx-2 px-4">Stop</button>
+      </div>
+    </div>
+
+    <div class="container chats">
+      <h2>Your Responses</h2>
+
+      <hr />
+    </div>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+      crossorigin="anonymous"
+    ></script>
+    <script>
+      const populateUsingGPT = (input) => {
+        document.querySelector(".chats").lastElementChild.innerHTML =
+          "Loading...";
+        postData("/api", { input: input }).then((data) => {
+          document.querySelector(
+            ".chats"
+          ).lastElementChild.innerHTML = `<div>Question: ${input}</div>
+      <div>Answer: ${data.message}</div>
+
+      <hr />`;
+        });
+      };
+      let speech = true;
+      let globalTranscript;
+      window.SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.interimResults = true;
+
+      recognition.addEventListener("result", (e) => {
+        const transcript = Array.from(e.results)
+          .map((result) => result[0])
+          .map((result) => result.transcript)
+          .join("");
+        globalTranscript = transcript;
+      });
+
+      async function postData(url = "", data = {}) {
+        // Default options are marked with *
+        const response = await fetch(url, {
+          method: "POST", // *GET, POST, PUT, DELETE, etc.
+          mode: "cors", // no-cors, *cors, same-origin
+          cache: "no-cache", // *default, no-cache, reload, force-cache, only-if-cached
+          credentials: "same-origin", // include, *same-origin, omit
+          headers: {
+            "Content-Type": "application/json",
+            // 'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          redirect: "follow", // manual, *follow, error
+          referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+          body: JSON.stringify(data), // body data type must match "Content-Type" header
+        });
+        return response.json(); // parses JSON response into native JavaScript objects
+      }
+      start.addEventListener("click", () => {
+        document.querySelector(".chats").innerHTML +=
+          "<div>Please ask the question.</div>";
+        if (speech == true) {
+          recognition.start();
+          recognition.addEventListener("end", () => {
+            if (globalTranscript !== "") populateUsingGPT(globalTranscript);
+
+            globalTranscript = "";
+          });
+        }
+        return;
+      });
+
+      stoper.addEventListener("click", () => {
+        recognition.addEventListener("audioend", () => {
+          console.log("Speech recognition ended!");
+        });
+      });
+    </script>
+  </body>
+</html>
